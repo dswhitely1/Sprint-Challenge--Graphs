@@ -18,7 +18,7 @@ class DoublyLinkList:
             self.tail = new_node
         else:
             new_node.next_node = self.head
-            self.head.prev = new_node
+            self.head.prev_node = new_node
             self.head = new_node
 
     def remove_from_head(self):
@@ -34,7 +34,7 @@ class DoublyLinkList:
             self.tail = new_node
         else:
             new_node.prev_node = self.tail
-            self.tail.next = new_node
+            self.tail.next_node = new_node
             self.tail = new_node
 
     def remove_from_tail(self):
@@ -48,10 +48,10 @@ class DoublyLinkList:
             self.head = None
             self.tail = None
         elif node is self.head:
-            self.head = self.head.next
+            self.head = self.head.next_node
             node.delete()
         elif node is self.tail:
-            self.tail = self.tail.prev
+            self.tail = self.tail.prev_node
             node.delete()
         else:
             node.delete()
