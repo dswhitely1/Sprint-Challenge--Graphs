@@ -75,6 +75,7 @@ class Traversal:
         self.finished = set()
         self.available_rooms = []
         self.reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
+        self.directions = { "e": "e", "s": "s", "w": "w", "n": "n"}
 
     def check_exits(self, room_id):
         for exits in self.maze_graph.verticies[room_id]:
@@ -88,9 +89,10 @@ class Traversal:
         return True
 
     def get_next_direction(self, room_id):
-        for direction in self.maze_graph.verticies[room_id]:
-            if self.maze_graph.verticies[room_id][direction] == '?':
-                return direction
+        for direction in self.directions:
+            if direction in self.maze_graph.verticies[room_id]:
+                if self.maze_graph.verticies[room_id][direction] == '?':
+                    return direction
         return None
 
     def retreat(self, room_id):
@@ -99,7 +101,7 @@ class Traversal:
         # target = self.available_rooms[-1] if len(self.available_rooms) != 1 else self.available_rooms[0]
         target = self.available_rooms
         new_path = self.maze_graph.get_path(room_id, target)
-        print(new_path)
+        print(f'Current Room: {room_id}, Path to next available room: {new_path}')
         return new_path
 
     def create_room_in_graph(self, r_id, r_exits):
