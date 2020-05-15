@@ -1,7 +1,7 @@
 from ast import literal_eval
 
 from player import Player
-from util import Stack, Queue
+from util import Queue
 from world import World
 
 # Load world
@@ -123,17 +123,50 @@ class Traversal:
             self.player.travel(next_dir)
             traversal_path.append(next_dir)
             next_room_id = self.player.current_room.id
+            print(f'Advancing to Room {next_room_id}')
             next_room_exits = self.player.current_room.get_exits()
             if next_room_id not in self.maze_graph.verticies:
                 self.create_room_in_graph(next_room_id, next_room_exits)
             self.maze_graph.add_edge(room_id, next_room_id, next_dir)
             self.check_exits(room_id)
 
+    def build_graph(self, r=None, g=None, p=None, q=None):
+        if g is None:
+            g = Graph()
+        if p is None:
+            p = Player(world.starting_room)
+        if q is None:
+            q = Queue()
+        if r is None:
+            r = p.current_room
+        r_exits = p.current_room.get_exits()
+        if r.id not in g.verticies:
+            for r_exit in r_exits:
+                g.add(r.id, r_exit)
+        for direction in g.verticies[r.id]:
+            q.enqueue((direction, r))
+
+        while len(q) > 0:
+            next_move = q.dequeue();
+            direction = next_move[0]
+            room = next_move[1]
+
+            next_room = room.get_room_in_direction(direction)
+            next_room_exits = room.get_room_in_direction(direction).get_exits()
+            if next_room.id not in g.verticies:
+                for r_exit in next_room_exits:
+                    g.add(next_room.id, r_exit)
+            g.add_edge(room.id, next_room.id, direction)
+            for r_exit in g.verticies[next_room.id]:
+                if g.verticies[next_room.id][r_exit] == '?':
+                    q.enqueue((r_exit, next_room))
+
+            print(f'Current Graph: {len(g.verticies)}')
+
     def walk_maze_for_exercise(self):
         dir_list = ['n', 'w', 'e', 's']
         for direction in dir_list:
             self.directions[direction] = direction
-        print(f'Current Order of Directions, {dir_list}')
         room_id = self.player.current_room.id
         room_exits = self.player.current_room.get_exits()
 
@@ -157,6 +190,7 @@ class Traversal:
                 get_path_to_next_advance = self.retreat(room_id)
                 # [4, 0]
                 # If None
+                print(get_path_to_next_advance)
                 if get_path_to_next_advance is not None:
                     current_room_ids = get_path_to_next_advance[:-1]
                     next_room_ids = get_path_to_next_advance[1:]
@@ -170,6 +204,7 @@ class Traversal:
                                 next_dirs.append(direction)
                     for backtrack_direction in next_dirs:
                         self.player.travel(backtrack_direction)
+                        print(f'Retreating to room {self.player.current_room.id}')
                         traversal_path.append(backtrack_direction)
                     room_id = self.player.current_room.id
                     check = self.check_exits(room_id)
@@ -179,6 +214,7 @@ class Traversal:
 
 traverse_me = Traversal(player)
 traverse_me.walk_maze_for_exercise()
+# traverse_me.build_graph()
 
 # TRAVERSAL TEST - DO NOT MODIFY
 visited_rooms = set()
