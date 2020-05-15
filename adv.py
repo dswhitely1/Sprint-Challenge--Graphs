@@ -70,8 +70,6 @@ class Traversal:
     def __init__(self, robot):
         self.player = robot
         self.maze_graph = Graph()
-        self.queue = Queue()
-        self.stack = Stack()
         self.finished = set()
         self.available_rooms = []
         self.reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
@@ -132,32 +130,6 @@ class Traversal:
             self.check_exits(room_id)
 
     def walk_maze_for_exercise(self):
-        """
-                e -> n -> w -> s = 1153
-                e -> n -> s -> w = 1175
-                e -> s -> n -> w = 1111
-                e -> s -> w -> n = 1076
-                e -> w -> n -> s = 1052
-                e -> w -> s -> n = 1044
-                w -> n -> e -> s = 1047
-                w -> n -> s -> e = 1079
-                w -> s -> n -> e = 1097
-                w -> s -> e -> n = 1063
-                w -> e -> n -> s = 1048
-                w -> e -> s -> n = 1063
-                n -> w -> e -> s = 1030 **
-                n -> w -> s -> e = 1056
-                n -> s -> w -> e = 1108
-                n -> s -> e -> w = 1110
-                n -> e -> w -> s = 1147
-                n -> e -> s -> w = 1141
-                s -> w -> e -> n = 1063
-                s -> w -> n -> e = 1091
-                s -> n -> w -> e = 1096
-                s -> n -> e -> w = 1078
-                s -> e -> w -> n = 1076
-                s -> e -> n -> w = 1111
-                """
         dir_list = ['n', 'w', 'e', 's']
         for direction in dir_list:
             self.directions[direction] = direction
