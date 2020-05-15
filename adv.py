@@ -75,7 +75,7 @@ class Traversal:
         self.finished = set()
         self.available_rooms = []
         self.reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
-        self.directions = {"e": "e", "w":"w",  "s": "s", "n": "n"}
+        self.directions = {}
 
     def check_exits(self, room_id):
         for exits in self.maze_graph.verticies[room_id]:
@@ -101,7 +101,7 @@ class Traversal:
         # target = self.available_rooms[-1] if len(self.available_rooms) != 1 else self.available_rooms[0]
         target = self.available_rooms
         new_path = self.maze_graph.get_path(room_id, target)
-        print(f'Current Room: {room_id}, Path to next available room: {new_path}')
+        # print(f'Current Room: {room_id}, Path to next available room: {new_path}')
         return new_path
 
     def create_room_in_graph(self, r_id, r_exits):
@@ -132,7 +132,36 @@ class Traversal:
             self.check_exits(room_id)
 
     def walk_maze_for_exercise(self):
-
+        """
+                e -> n -> w -> s = 1153
+                e -> n -> s -> w = 1175
+                e -> s -> n -> w = 1111
+                e -> s -> w -> n = 1076
+                e -> w -> n -> s = 1052
+                e -> w -> s -> n = 1044
+                w -> n -> e -> s = 1047
+                w -> n -> s -> e = 1079
+                w -> s -> n -> e = 1097
+                w -> s -> e -> n = 1063
+                w -> e -> n -> s = 1048
+                w -> e -> s -> n = 1063
+                n -> w -> e -> s = 1030 **
+                n -> w -> s -> e = 1056
+                n -> s -> w -> e = 1108
+                n -> s -> e -> w = 1110
+                n -> e -> w -> s = 1147
+                n -> e -> s -> w = 1141
+                s -> w -> e -> n = 1063
+                s -> w -> n -> e = 1091
+                s -> n -> w -> e = 1096
+                s -> n -> e -> w = 1078
+                s -> e -> w -> n = 1076
+                s -> e -> n -> w = 1111
+                """
+        dir_list = ['n', 'w', 'e', 's']
+        for direction in dir_list:
+            self.directions[direction] = direction
+        print(f'Current Order of Directions, {dir_list}')
         room_id = self.player.current_room.id
         room_exits = self.player.current_room.get_exits()
 
