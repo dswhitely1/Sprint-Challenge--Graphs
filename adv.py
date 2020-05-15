@@ -75,7 +75,7 @@ class Traversal:
         self.finished = set()
         self.available_rooms = []
         self.reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
-        self.directions = {"w": "w", "e":"e",  "s": "s", "n": "n"}
+        self.directions = {"e": "e", "w":"w",  "s": "s", "n": "n"}
 
     def check_exits(self, room_id):
         for exits in self.maze_graph.verticies[room_id]:
