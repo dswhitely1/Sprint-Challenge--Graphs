@@ -26,68 +26,89 @@ player = Player(world.starting_room)
 # Fill this out with directions to walk
 # traversal_path = ['n', 'n']
 traversal_path = []
+reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
+
+
+class Graph:
+    def __init__(self):
+        self.verticies = {}
+
+    def add(self, room_id, direction):
+        if room_id not in self.verticies:
+            self.verticies[room_id] = {}
+        self.verticies[room_id][direction] = '?'
+
+    def add_edge(self, r1, r2, direction):
+        self.verticies[r1][direction] = r2
+        self.verticies[r2][reverse_dirs[direction]] = r1
+
+    def get_neighbors(self, room_id):
+        ret_list = []
+        for key, value in self.verticies[room_id].items():
+            if value != '?':
+                ret_list.append((key, value))
+        return ret_list
+
+    def get_path(self, start, target, path=None, visited=None):
+        if path is None:
+            path = []
+        if visited is None:
+            visited = set()
+        path = path + [start]
+        if start == target:
+            return path
+        if start not in visited:
+            visited.add(start)
+            for child in self.get_neighbors(start):
+                new_path = self.get_path(child[1], target, path, visited)
+                if new_path:
+                    return new_path
+        return None
 
 
 class Traversal:
     def __init__(self, robot):
         self.player = robot
-        self.maze_graph = {}
+        self.maze_graph = Graph()
         self.queue = Queue()
         self.stack = Stack()
         self.finished = set()
+        self.dead_ends = set()
+        self.available_rooms = []
         self.reverse_dirs = {"n": "s", "s": "n", "e": "w", "w": "e"}
 
     def check_exits(self, room_id):
-        for exits in self.maze_graph[room_id]:
-            if self.maze_graph[room_id][exits] == '?':
+        for exits in self.maze_graph.verticies[room_id]:
+            if self.maze_graph.verticies[room_id][exits] == '?':
+                if room_id not in self.available_rooms:
+                    self.available_rooms.append(room_id)
                 return False
         self.finished.add(room_id)
+        if room_id in self.available_rooms:
+            self.available_rooms.remove(room_id)
         return True
-
-    def is_transversed(self):
-        for rooms in self.maze_graph:
-            for directions in self.maze_graph[rooms]:
-                if self.maze_graph[rooms][directions] == '?':
-                    return False
-        return True
-
-    def check_maze(self, room_id, room_exits):
-        if room_id not in self.maze_graph:
-            self.maze_graph[room_id] = {}
-            for directions in room_exits:
-                self.maze_graph[room_id][directions] = '?'
 
     def get_next_direction(self, room_id):
-        for direction in self.maze_graph[room_id]:
-            if self.maze_graph[room_id][direction] == '?':
+        for direction in self.maze_graph.verticies[room_id]:
+            if self.maze_graph.verticies[room_id][direction] == '?':
                 return direction
         return None
 
-    def retreat(self, room_id, prev_room_id=None, back_path=None, visited=None):
-        if back_path is None:
-            back_path = []
-        if visited is None:
-            visited = set()
-        if room_id == 335:
-            # Stop Debugger here
-            print(room_id)
-        check = self.check_exits(room_id)
-        back_path.append(room_id)
-        if len(self.finished) == len(room_graph):
+    def retreat(self, room_id):
+        if len(self.available_rooms) == 0:
             return None
-        if not check:
-            return back_path
-        for key, value in self.maze_graph[room_id].items():
-            if prev_room_id != value:
-                new_path = self.retreat(value, room_id, back_path, visited)
-                if new_path:
-                    return new_path
+        target = self.available_rooms[-1] if len(self.available_rooms) != 1 else self.available_rooms[0]
+        new_path = self.maze_graph.get_path(room_id, target)
+        return new_path
 
     def advance(self):
         room_id = self.player.current_room.id
         room_exits = self.player.current_room.get_exits()
-        if room_id not in self.maze_graph:
-            self.check_maze(room_id, room_exits)
+        if len(room_exits) == 1:
+            self.dead_ends.add(room_id)
+        if room_id not in self.maze_graph.verticies:
+            for an_exit in room_exits:
+                self.maze_graph.add(room_id, an_exit)
 
         if room_id not in self.finished and self.check_exits(room_id):
             self.finished.add(room_id)
@@ -100,11 +121,13 @@ class Traversal:
             traversal_path.append(next_dir)
             next_room_id = self.player.current_room.id
             next_room_exits = self.player.current_room.get_exits()
-            print(f'Moving Player from Room {room_id} to Room {next_room_id} in the direction of {next_dir}')
-            self.check_maze(next_room_id, next_room_exits)
-            self.maze_graph[room_id][next_dir] = next_room_id
-            self.maze_graph[next_room_id][self.reverse_dirs[next_dir]] = room_id
-
+            if len(next_room_exits) == 1:
+                self.dead_ends.add(next_room_id)
+            if next_room_id not in self.maze_graph.verticies:
+                for an_exit in next_room_exits:
+                    self.maze_graph.add(next_room_id, an_exit)
+            self.maze_graph.add_edge(room_id, next_room_id, next_dir)
+            self.check_exits(room_id)
 
     def walk_maze_for_exercise(self, room_finished=None, prev=None, path=None):
         if room_finished is None:
@@ -116,8 +139,9 @@ class Traversal:
         room_id = self.player.current_room.id
         room_exits = self.player.current_room.get_exits()
 
-        if room_id not in self.maze_graph:
-            self.check_maze(room_id, room_exits)
+        if room_id not in self.maze_graph.verticies:
+            for an_exit in room_exits:
+                self.maze_graph.add(room_id, an_exit)
 
         if self.check_exits(room_id):
             room_finished.add(room_id)
@@ -126,7 +150,9 @@ class Traversal:
         while len(self.finished) != len(room_graph):
             # Move Forward to Dead End
             check = self.check_exits(room_id)
-            print(self.finished)
+            if not check and room_id not in self.available_rooms:
+                self.available_rooms.append(room_id)
+
             while not check:
                 self.advance()
                 room_id = self.player.current_room.id
@@ -144,61 +170,16 @@ class Traversal:
                     for i in range(len(get_path_to_next_advance) - 1):
                         cur_room_id = current_room_ids[i]
                         nex_room_id = next_room_ids[i]
-                        for direction in self.maze_graph[cur_room_id]:
-                            if self.maze_graph[cur_room_id][direction] == nex_room_id:
+                        for direction in self.maze_graph.verticies[cur_room_id]:
+                            if self.maze_graph.verticies[cur_room_id][direction] == nex_room_id:
                                 next_dirs.append(direction)
                     for backtrack_direction in next_dirs:
                         self.player.travel(backtrack_direction)
-                        print(
-                            f'Player Backtracking to Room {player.current_room.id} in the direction of {backtrack_direction}  Current visited room count: {len(self.finished)}')
-                        print(f'Current Graph: {self.maze_graph[self.player.current_room.id]}')
-                        print(f'Current Overall Graph: {self.maze_graph}')
                         traversal_path.append(backtrack_direction)
-                        print(f'Number of steps: {len(traversal_path)}')
                     room_id = self.player.current_room.id
                     check = self.check_exits(room_id)
                 else:
                     break
-
-
-            # if room_id not in room_finished:
-            #     for direction in self.maze_graph[room_id]:
-            #         if direction in self.maze_graph[room_id]:
-            #             if self.maze_graph[room_id][direction] == '?':
-            #                 s.push(direction)
-            #         else:
-            #             s.push(direction)
-            # else:
-            #     # We're in a deadend, check maze graph for possible exits
-            #     # Clear the Stack
-            #     s = Stack()
-            #     reverse_path = self.retreat(room_id)
-            #     cur_room_path = reverse_path[:-1]
-            #     next_room_path = reverse_path[1:]
-            #     new_dirs = []
-            #     for i in range(len(reverse_path) -1):
-            #         for key, value in self.maze_graph[cur_room_path[i]]:
-            #             if value == next_room_path[i]:
-            #                 new_dirs.append(key)
-            #     print(new_dirs)
-            #     print(f'reverse_path: {reverse_path[1:]}')
-
-
-
-
-        # next_dir = s.pop()
-        # if next_dir is not None:
-        #     self.player.travel(next_dir)
-        #     traversal_path.append(next_dir)
-        #     path = path + [next_dir]
-        #     next_room_id = self.player.current_room.id
-        #     next_room_exits = self.player.current_room.get_exits()
-        #     self.check_maze(next_room_id, next_room_exits)
-        #     self.maze_graph[room_id][next_dir] = next_room_id
-        #     self.maze_graph[next_room_id][self.reverse_dirs[next_dir]] = room_id
-        #     new_path = self.walk_maze_for_exercise(room_finished, next_dir, path, s)
-        #     if new_path:
-        #         return new_path
 
 
 traverse_me = Traversal(player)
